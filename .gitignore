@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+*.log
+coverage
+.DS_Store
+*.db
+*.db-journal
+.system_generated
+
+# Project notebook & personal notes
+docs/notebook*
+docs/notebook.md
+/docs/notebook
+/dos/notebook

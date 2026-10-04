@@ -1,0 +1,44 @@
+services:
+  # Backend Finance & API Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: se104-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=development
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=se104-agent-hub-super-secret-jwt-key-finance
+      - CORS_ORIGIN=*
+    volumes:
+      - ./prisma:/app/prisma
+      - ./src:/app/src
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Optional PostgreSQL instance for production integration test / cloud profile
+  postgres:
+    image: postgres:16-alpine
+    container_name: se104-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: se104_user
+      POSTGRES_PASSWORD: se104_password
+      POSTGRES_DB: se104_agenthub
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    profiles:
+      - postgres
+
+volumes:
+  pgdata:

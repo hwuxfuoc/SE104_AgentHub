@@ -1,0 +1,259 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         String   @default("DEALER") // ADMIN, SALES, WAREHOUSE, ACCOUNTANT, DEALER
+  dealerId     String?
+  dealer       Dealer?  @relation(fields: [dealerId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  approvedOrders    SalesOrder[]          @relation("ApprovedByUser")
+  collectedPayments Payment[]             @relation("CollectedByUser")
+  ruleHistories     BusinessRuleHistory[]
+  auditLogs         AuditLog[]
+}
+
+model District {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  maxDealers Int      @default(4)
+  dealers    Dealer[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model DealerTier {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  maxDebt   Int      @default(10000000) // Default 10M for Tier 1, 5M for Tier 2 per QD3
+  dealers   Dealer[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dealer {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  phone        String
+  address      String
+  email        String
+  districtId   String
+  district     District @relation(fields: [districtId], references: [id])
+  tierId       String
+  tier         DealerTier @relation(fields: [tierId], references: [id])
+  receivedDate DateTime @default(now())
+  status       String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  currentDebt  Int      @default(0) // Số tiền đang nợ tính bằng VND (nguyên tử)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users             User[]
+  salesOrders       SalesOrder[]
+  invoices          Invoice[]
+  payments          Payment[]
+  debtLedgerEntries DebtLedger[]
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  name      String
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  skus       Sku[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Sku {
+  id         String      @id @default(cuid())
+  code       String      @unique
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id])
+  unit       String
+  orderItems OrderItem[]
+  pricings   Pricing[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Pricing {
+  id            String    @id @default(cuid())
+  skuId         String
+  sku           Sku       @relation(fields: [skuId], references: [id])
+  importPrice   Int
+  exportPrice   Int       // Default 102% importPrice per QD3
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model SalesOrder {
+  id           String    @id @default(cuid())
+  orderNumber  String    @unique
+  dealerId     String
+  dealer       Dealer    @relation(fields: [dealerId], references: [id])
+  status       String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, PROCESSING, SHIPPED, COMPLETED, CANCELLED
+  totalAmount  Int       @default(0)
+  approvedById String?
+  approvedBy   User?     @relation("ApprovedByUser", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  items     OrderItem[]
+  invoices  Invoice[]
+  shipments Shipment[]
+}
+
+model OrderItem {
+  id           String     @id @default(cuid())
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  skuId        String
+  sku          Sku        @relation(fields: [skuId], references: [id])
+  unit         String
+  quantity     Int
+  unitPrice    Int
+  amount       Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Shipment {
+  id             String     @id @default(cuid())
+  shipmentNumber String     @unique
+  salesOrderId   String
+  salesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id])
+  status         String     @default("DELIVERED")
+  shippedDate    DateTime   @default(now())
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  invoiceNumber   String    @unique
+  salesOrderId    String?
+  salesOrder      SalesOrder? @relation(fields: [salesOrderId], references: [id])
+  dealerId        String
+  dealer          Dealer    @relation(fields: [dealerId], references: [id])
+  totalAmount     Int
+  paidAmount      Int       @default(0)
+  remainingAmount Int
+  status          String    @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, CANCELLED
+  issueDate       DateTime  @default(now())
+  dueDate         DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  allocations PaymentInvoiceAllocation[]
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  receiptNumber String    @unique // Số phiếu thu BM5, e.g. PT-20260930-0001
+  dealerId      String
+  dealer        Dealer    @relation(fields: [dealerId], references: [id])
+  amount        Int       // Số tiền thu
+  paymentDate   DateTime  @default(now())
+  paymentMethod String    @default("CASH") // CASH, BANK_TRANSFER
+  notes         String?
+  collectorId   String?
+  collector     User?     @relation("CollectedByUser", fields: [collectorId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  allocations PaymentInvoiceAllocation[]
+}
+
+model PaymentInvoiceAllocation {
+  id        String   @id @default(cuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
+model DebtLedger {
+  id              String   @id @default(cuid())
+  dealerId        String
+  dealer          Dealer   @relation(fields: [dealerId], references: [id])
+  transactionType String   // INVOICE, PAYMENT, RETURN, ADJUSTMENT
+  referenceType   String   // INVOICE, PAYMENT, RETURN, MANUAL
+  referenceId     String?
+  referenceCode   String?  // e.g. HD-001, PT-001
+  debitAmount     Int      @default(0) // Số tiền tăng nợ (mua hàng/hóa đơn)
+  creditAmount    Int      @default(0) // Số tiền giảm nợ (thu tiền/trả hàng)
+  previousBalance Int      // Số nợ trước giao dịch
+  currentBalance  Int      // Số nợ sau giao dịch (previousBalance + debitAmount - creditAmount)
+  notes           String?
+  createdAt       DateTime @default(now())
+}
+
+model BusinessRule {
+  id          String                @id @default(cuid())
+  code        String                @unique // QD1, QD2, QD3, QD5, QD7
+  name        String
+  value       String                // JSON formatted configuration
+  description String?
+  isActive    Boolean               @default(true)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  histories   BusinessRuleHistory[]
+}
+
+model BusinessRuleHistory {
+  id           String       @id @default(cuid())
+  ruleId       String
+  rule         BusinessRule @relation(fields: [ruleId], references: [id])
+  changedById  String
+  changedBy    User         @relation(fields: [changedById], references: [id])
+  oldValue     String
+  newValue     String
+  changeReason String?
+  changedAt    DateTime     @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userRole  String?
+  action    String   // CREATE_PAYMENT, ISSUE_INVOICE, APPROVE_ORDER, UPDATE_RULE...
+  entity    String   // PAYMENT, INVOICE, DEALER, RULE...
+  entityId  String?
+  details   String?  // JSON formatted details of change
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
