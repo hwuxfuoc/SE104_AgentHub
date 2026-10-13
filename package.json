@@ -15,7 +15,7 @@
     "db:migrate": "tsx src/database/migrate.ts",
     "db:seed": "tsx src/database/seed.ts",
     "db:studio": "prisma studio",
-    "lint": "tsc --noEmit"
+    "lint": "tsc -p tsconfig.check.json --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
