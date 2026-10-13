@@ -23,20 +23,6 @@ declare global {
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
-  // Allow test / dev mock header if provided
-  const devUserId = req.headers['x-user-id'] as string;
-  const devUserRole = req.headers['x-user-role'] as string;
-  if (devUserId && devUserRole) {
-    req.user = {
-      id: devUserId,
-      email: `${devUserRole.toLowerCase()}@system.local`,
-      role: devUserRole,
-      fullName: `User ${devUserRole}`,
-      dealerId: req.headers['x-dealer-id'] as string || null,
-    };
-    return next();
-  }
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new UnauthorizedError('Missing or invalid Authorization header');
   }
