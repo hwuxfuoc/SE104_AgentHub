@@ -14,6 +14,7 @@ import reportRoutes from './modules/finance/reports/report.routes.js';
 import creditRoutes from './modules/finance/credit/credit.routes.js';
 import businessRulesRoutes from './modules/rules/business-rules.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
+import { dealerRoutes, districtRoutes, dealerTierRoutes } from './modules/commercial/dealer/dealer.routes.js';
 
 export const createApp = () => {
   const app = express();
@@ -46,6 +47,9 @@ export const createApp = () => {
   app.use('/api/v1/payments', paymentRoutes);
   app.use('/api/v1/invoices', invoiceRoutes);
   app.use('/api/v1/dealers', debtRoutes);
+  app.use('/api/v1/dealers', dealerRoutes);
+  app.use('/api/v1/districts', districtRoutes);
+  app.use('/api/v1/dealer-tiers', dealerTierRoutes);
   app.use('/api/v1/reports', reportRoutes);
   app.use('/api/v1/finance', creditRoutes);
   app.use('/api/v1/business-rules', businessRulesRoutes);
