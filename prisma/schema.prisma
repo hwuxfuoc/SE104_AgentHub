@@ -29,6 +29,7 @@ model District {
   code       String   @unique
   name       String
   maxDealers Int      @default(4)
+  isActive   Boolean  @default(true)
   dealers    Dealer[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -38,6 +39,7 @@ model DealerTier {
   id        String   @id @default(cuid())
   name      String   @unique
   maxDebt   Int      @default(10000000) // Default 10M for Tier 1, 5M for Tier 2 per QD3
+  isActive  Boolean  @default(true)
   dealers   Dealer[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,6 +67,11 @@ model Dealer {
   invoices          Invoice[]
   payments          Payment[]
   debtLedgerEntries DebtLedger[]
+
+  @@index([districtId])
+  @@index([tierId])
+  @@index([status, createdAt])
+  @@index([name])
 }
 
 model Category {
