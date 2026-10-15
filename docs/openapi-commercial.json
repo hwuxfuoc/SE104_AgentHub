@@ -3,7 +3,7 @@
   "info": {
     "title": "AgentHub P3 Dealer API",
     "version": "0.1.0",
-    "description": "BM1/BM4/QD1 milestone on shared P5 Express/Prisma/SQLite backend. JWT required. Writes: ADMIN/SALES. Reads: ADMIN/SALES/ACCOUNTANT/WAREHOUSE; DEALER can only read own record. All retained records count toward district capacity."
+    "description": "BM1/BM4/QD1 milestone on shared P5 Express/Prisma/PostgreSQL backend. JWT required. Writes: ADMIN/SALES. Reads: ADMIN/SALES/ACCOUNTANT/WAREHOUSE; DEALER can only read own record. All retained records count toward district capacity."
   },
   "servers": [
     {

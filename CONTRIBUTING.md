@@ -1,5 +1,11 @@
 # Quy ước branch và pull request
 
+## Stack backend
+
+- Node.js 22, TypeScript strict, Express, Prisma ORM và PostgreSQL 18.
+- Dùng cùng PostgreSQL cho local và integration test; schema thay đổi phải kèm migration.
+- Chạy `npm run db:migrate` để áp dụng migration, không thay bằng `db:push` vì database có trigger QĐ1.
+
 ## Branch
 
 - `main`: branch chính; đưa thay đổi vào qua pull request.

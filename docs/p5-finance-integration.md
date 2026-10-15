@@ -2,7 +2,7 @@
 
 > **Dự án:** SE104 - Quản Lý Các Đại Lý  
 > **Vai trò:** P5 - Finance Backend, Integration và Kiểm Thử Toàn Hệ Thống  
-> **Ngôn ngữ & Công nghệ:** TypeScript (Strict), Node.js, Express, Prisma ORM, SQLite/PostgreSQL, Docker, Vitest, Supertest  
+> **Ngôn ngữ & Công nghệ:** TypeScript (Strict), Node.js, Express, Prisma ORM, PostgreSQL 18, Docker, Vitest, Supertest
 > **Ngày hoàn thành:** 30/09/2026  
 
 ---
@@ -43,7 +43,7 @@ Vai trò **P5** chịu trách nhiệm toàn bộ phân hệ **Tài chính, Kế 
    - Service `OrderIntegrationService.processOrderReturnRefund` tự động giảm nợ khi nhận hàng trả lại.
 9. **Hạ Tầng Docker & Cấu Hình Local:**
    - Xây dựng `Dockerfile` đa tầng (multi-stage build) tối ưu dung lượng cho production.
-   - Xây dựng `docker-compose.yml` tích hợp health check và hỗ trợ PostgreSQL / SQLite.
+   - `docker-compose.yml` dùng PostgreSQL 18, health check và migration trước khi chạy backend.
    - Bộ dữ liệu mẫu (`seed.ts`) chứa tài khoản đủ 5 roles, 20 quận, 2 loại đại lý, 5 mặt hàng, 3 đơn vị tính và các giao dịch mẫu.
 10. **Bộ Kiểm Thử Tự Động Toàn Diện (Test Suite):**
     - 20/20 tests pass (Unit tests, Rule enforcement tests, Report math tests, Supertest API Integration tests).
@@ -263,9 +263,10 @@ flowchart TD
 # 1. Cài đặt dependencies
 npm install
 
-# 2. Sinh Prisma Client & Đồng bộ Database
+# 2. Khởi động PostgreSQL, sinh Prisma Client và áp dụng migration
+docker compose up -d postgres
 npm run db:generate
-npm run db:push
+npm run db:migrate
 
 # 3. Nạp dữ liệu mẫu (Seed accounts, rules, products, dealers, transactions)
 npm run db:seed

@@ -1,6 +1,8 @@
 # Multi-stage build for production
 FROM node:22-alpine AS builder
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy package files
@@ -23,6 +25,8 @@ RUN npm run build
 # Production runner stage
 FROM node:22-alpine AS runner
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -37,6 +41,7 @@ RUN npm ci --only=production
 
 # Copy generated prisma client and built JS
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 
 # Create non-root user

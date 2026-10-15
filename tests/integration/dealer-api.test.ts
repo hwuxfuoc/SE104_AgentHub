@@ -5,7 +5,7 @@ import { createApp } from '../../src/app.js';
 import prisma from '../../src/config/prisma.js';
 import { generateToken } from '../../src/middleware/auth.middleware.js';
 
-describe('P3 BM1/BM4 dealer API with migrated SQLite', () => {
+describe('P3 BM1/BM4 dealer API with migrated PostgreSQL', () => {
   const app = createApp();
   let token: string;
   let tierId: string;

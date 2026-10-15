@@ -47,6 +47,9 @@ async function write<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>)
 }
 
 async function validateReferences(tx: Prisma.TransactionClient, districtId: string, tierId: string) {
+  // Serialize admissions to this district across all backend instances.
+  // NO KEY UPDATE remains compatible with the foreign key's KEY SHARE locks.
+  await tx.$queryRaw`SELECT "id" FROM "District" WHERE "id" = ${districtId} FOR NO KEY UPDATE`;
   const district = await tx.district.findUnique({ where: { id: districtId } });
   const tier = await tx.dealerTier.findUnique({ where: { id: tierId } });
   if (!district) throw new NotFoundError('District', districtId);
