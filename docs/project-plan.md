@@ -63,6 +63,7 @@ Các phép tính tiền phải dùng kiểu số nguyên theo đơn vị đồng
 
 ### 5.2. Ngôn ngữ và quy ước phát triển
 
+- Stack backend thống nhất: Node.js, TypeScript strict, Express và Prisma ORM; database dùng PostgreSQL 18 cho local, CI và triển khai. Migration và kiểm thử tích hợp phải chạy trên PostgreSQL.
 - Sử dụng TypeScript cho backend, domain logic, API contract, migration helper và các module dùng chung; mã nguồn ứng dụng dùng phần mở rộng `.ts`.
 - Sử dụng TSX cho Dealer Portal và Internal/Admin Frontend; các component React dùng phần mở rộng `.tsx`.
 - Hạn chế JavaScript thuần trong mã nguồn ứng dụng; chỉ dùng JavaScript khi bắt buộc bởi file cấu hình hoặc công cụ build.
