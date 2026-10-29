@@ -1,0 +1,186 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------- Design tokens (semantic, theme-aware) ---------- */
+:root {
+  --bg: hsl(210 17% 97%);
+  --surface: hsl(0 0% 100%);
+  --surface-2: hsl(210 14% 95%);
+  --border: hsl(220 13% 91%);
+  --text: hsl(220 25% 12%);
+  --text-muted: hsl(220 9% 46%);
+  --brand: hsl(173 72% 34%);
+  --brand-strong: hsl(173 78% 26%);
+  --brand-soft: hsl(173 55% 93%);
+  --success: hsl(152 52% 30%);
+  --success-soft: hsl(152 50% 92%);
+  --warning: hsl(36 88% 40%);
+  --warning-soft: hsl(40 90% 92%);
+  --danger: hsl(0 68% 48%);
+  --danger-soft: hsl(0 80% 95%);
+  --info: hsl(210 80% 46%);
+  --info-soft: hsl(210 80% 94%);
+  /* Neutral dark sidebar — not blue-navy (study: 0 of 17 dark saturated sidebars on light screens) */
+  --sidebar: hsl(0 0% 9%);
+  --sidebar-hover: hsl(0 0% 15%);
+  --sidebar-text: hsl(0 0% 63%);
+  --shadow-pop: 0 8px 32px hsl(220 25% 12% / 0.14);
+}
+
+.dark {
+  --bg: hsl(0 0% 7%);
+  --surface: hsl(0 0% 11%);
+  --surface-2: hsl(0 0% 15%);
+  --border: hsl(0 0% 19%);
+  --text: hsl(0 0% 93%);
+  --text-muted: hsl(0 0% 60%);
+  --brand: hsl(172 70% 48%);
+  --brand-strong: hsl(172 70% 58%);
+  --brand-soft: hsl(172 40% 14%);
+  --success-soft: hsl(152 38% 14%);
+  --warning-soft: hsl(38 45% 15%);
+  --danger-soft: hsl(0 40% 16%);
+  --info-soft: hsl(210 45% 16%);
+  --sidebar: hsl(0 0% 5%);
+  --sidebar-hover: hsl(0 0% 11%);
+  --sidebar-text: hsl(0 0% 58%);
+  --shadow-pop: 0 8px 32px hsl(0 0% 0% / 0.45);
+}
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-ink: var(--sidebar-text);
+  --shadow-pop: var(--shadow-pop);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ---------- Utilities / animations ---------- */
+.brand-gradient {
+  background: var(--brand);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.35s ease both;
+}
+.animate-slide-in {
+  animation: slide-in 0.25s ease both;
+}
+.animate-pop-in {
+  animation: pop-in 0.18s ease both;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.35), transparent);
+  animation: shimmer 1.3s infinite;
+}
+
+@media print {
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
