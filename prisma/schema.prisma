@@ -22,6 +22,8 @@ model User {
   collectedPayments Payment[]             @relation("CollectedByUser")
   ruleHistories     BusinessRuleHistory[]
   auditLogs         AuditLog[]
+  createdOrders     SalesOrder[]          @relation("OrderCreatedBy")
+  purchaseReceipts  PurchaseReceipt[]     @relation("ReceiptCreatedBy")
 }
 
 model District {
@@ -46,21 +48,21 @@ model DealerTier {
 }
 
 model Dealer {
-  id           String   @id @default(cuid())
-  code         String   @unique
+  id           String     @id @default(cuid())
+  code         String     @unique
   name         String
   phone        String
   address      String
   email        String
   districtId   String
-  district     District @relation(fields: [districtId], references: [id])
+  district     District   @relation(fields: [districtId], references: [id])
   tierId       String
   tier         DealerTier @relation(fields: [tierId], references: [id])
-  receivedDate DateTime @default(now())
-  status       String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
-  currentDebt  Int      @default(0) // Số tiền đang nợ tính bằng VND (nguyên tử)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  receivedDate DateTime   @default(now())
+  status       String     @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  currentDebt  Int        @default(0) // Số tiền đang nợ tính bằng VND (nguyên tử)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   users             User[]
   salesOrders       SalesOrder[]
@@ -95,15 +97,20 @@ model Product {
 }
 
 model Sku {
-  id         String      @id @default(cuid())
-  code       String      @unique
-  productId  String
-  product    Product     @relation(fields: [productId], references: [id])
-  unit       String
-  orderItems OrderItem[]
-  pricings   Pricing[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id           String                @id @default(cuid())
+  code         String                @unique
+  productId    String
+  product      Product               @relation(fields: [productId], references: [id])
+  unit         String
+  orderItems   OrderItem[]
+  pricings     Pricing[]
+  inventories  Inventory[]
+  movements    InventoryMovement[]
+  receiptLines PurchaseReceiptLine[]
+  reservations StockReservation[]
+  returnItems  SalesReturnItem[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 }
 
 model Pricing {
@@ -111,7 +118,7 @@ model Pricing {
   skuId         String
   sku           Sku       @relation(fields: [skuId], references: [id])
   importPrice   Int
-  exportPrice   Int       // Default 102% importPrice per QD3
+  exportPrice   Int // Default 102% importPrice per QD3
   effectiveFrom DateTime  @default(now())
   effectiveTo   DateTime?
   createdAt     DateTime  @default(now())
@@ -119,36 +126,137 @@ model Pricing {
 }
 
 model SalesOrder {
-  id           String    @id @default(cuid())
-  orderNumber  String    @unique
+  id           String     @id @default(cuid())
+  orderNumber  String     @unique
   dealerId     String
-  dealer       Dealer    @relation(fields: [dealerId], references: [id])
-  status       String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, PROCESSING, SHIPPED, COMPLETED, CANCELLED
-  totalAmount  Int       @default(0)
+  dealer       Dealer     @relation(fields: [dealerId], references: [id])
+  status       String     @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, PROCESSING, SHIPPED, COMPLETED, CANCELLED
+  totalAmount  Int        @default(0)
   approvedById String?
-  approvedBy   User?     @relation("ApprovedByUser", fields: [approvedById], references: [id])
+  approvedBy   User?      @relation("ApprovedByUser", fields: [approvedById], references: [id])
   approvedAt   DateTime?
   notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdById  String?
+  createdBy    User?      @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  warehouseId  String?
+  warehouse    Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  items     OrderItem[]
-  invoices  Invoice[]
-  shipments Shipment[]
+  items        OrderItem[]
+  invoices     Invoice[]
+  shipments    Shipment[]
+  reservations StockReservation[]
+  returns      SalesReturn[]
+
+  @@index([dealerId, status, createdAt])
 }
 
 model OrderItem {
-  id           String     @id @default(cuid())
+  id           String             @id @default(cuid())
   salesOrderId String
-  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  salesOrder   SalesOrder         @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   skuId        String
-  sku          Sku        @relation(fields: [skuId], references: [id])
+  sku          Sku                @relation(fields: [skuId], references: [id])
   unit         String
   quantity     Int
   unitPrice    Int
   amount       Int
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  reservations StockReservation[]
+  returnItems  SalesReturnItem[]
+}
+
+model Warehouse {
+  id           String              @id @default(cuid())
+  code         String              @unique
+  name         String
+  address      String?
+  isActive     Boolean             @default(true)
+  inventories  Inventory[]
+  movements    InventoryMovement[]
+  receipts     PurchaseReceipt[]
+  orders       SalesOrder[]
+  reservations StockReservation[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+model Inventory {
+  id          String    @id @default(cuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  skuId       String
+  sku         Sku       @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  onHand      Int       @default(0)
+  reserved    Int       @default(0)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([warehouseId, skuId])
+  @@index([skuId])
+}
+
+model InventoryMovement {
+  id            String    @id @default(cuid())
+  warehouseId   String
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  skuId         String
+  sku           Sku       @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  type          String
+  quantity      Int
+  referenceType String
+  referenceId   String
+  notes         String?
+  createdAt     DateTime  @default(now())
+
+  @@index([warehouseId, skuId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+model PurchaseReceipt {
+  id            String                @id @default(cuid())
+  receiptNumber String                @unique
+  warehouseId   String
+  warehouse     Warehouse             @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  receivedAt    DateTime              @default(now())
+  notes         String?
+  createdById   String?
+  createdBy     User?                 @relation("ReceiptCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lines         PurchaseReceiptLine[]
+  createdAt     DateTime              @default(now())
+}
+
+model PurchaseReceiptLine {
+  id                String          @id @default(cuid())
+  purchaseReceiptId String
+  purchaseReceipt   PurchaseReceipt @relation(fields: [purchaseReceiptId], references: [id], onDelete: Cascade)
+  skuId             String
+  sku               Sku             @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  quantity          Int
+  unitCost          Int
+  amount            Int
+
+  @@index([skuId])
+}
+
+model StockReservation {
+  id           String     @id @default(cuid())
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  orderItemId  String
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  warehouseId  String
+  warehouse    Warehouse  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  skuId        String
+  sku          Sku        @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  quantity     Int
+  status       String     @default("ACTIVE")
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  @@index([salesOrderId, status])
+  @@index([warehouseId, skuId, status])
 }
 
 model Shipment {
@@ -156,46 +264,82 @@ model Shipment {
   shipmentNumber String     @unique
   salesOrderId   String
   salesOrder     SalesOrder @relation(fields: [salesOrderId], references: [id])
-  status         String     @default("DELIVERED")
-  shippedDate    DateTime   @default(now())
+  status         String     @default("PREPARING")
+  shippedDate    DateTime?
+  deliveredAt    DateTime?
   notes          String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 }
 
+model SalesReturn {
+  id               String            @id @default(cuid())
+  returnNumber     String            @unique
+  salesOrderId     String
+  salesOrder       SalesOrder        @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  status           String            @default("REQUESTED")
+  reason           String
+  receivedAt       DateTime?
+  debtCreditAmount Int               @default(0)
+  notes            String?
+  items            SalesReturnItem[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([salesOrderId, status])
+  @@map("Return")
+}
+
+model SalesReturnItem {
+  id          String      @id @default(cuid())
+  returnId    String
+  salesReturn SalesReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId String
+  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  skuId       String
+  sku         Sku         @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  quantity    Int
+  unitPrice   Int
+  amount      Int
+
+  @@index([orderItemId])
+}
+
 model Invoice {
-  id              String    @id @default(cuid())
-  invoiceNumber   String    @unique
+  id              String      @id @default(cuid())
+  invoiceNumber   String      @unique
   salesOrderId    String?
   salesOrder      SalesOrder? @relation(fields: [salesOrderId], references: [id])
   dealerId        String
-  dealer          Dealer    @relation(fields: [dealerId], references: [id])
+  dealer          Dealer      @relation(fields: [dealerId], references: [id])
   totalAmount     Int
-  paidAmount      Int       @default(0)
+  paidAmount      Int         @default(0)
   remainingAmount Int
-  status          String    @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, CANCELLED
-  issueDate       DateTime  @default(now())
+  status          String      @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, CANCELLED
+  issueDate       DateTime    @default(now())
   dueDate         DateTime?
   notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   allocations PaymentInvoiceAllocation[]
+
+  @@unique([salesOrderId])
 }
 
 model Payment {
-  id            String    @id @default(cuid())
-  receiptNumber String    @unique // Số phiếu thu BM5, e.g. PT-20260930-0001
+  id            String   @id @default(cuid())
+  receiptNumber String   @unique // Số phiếu thu BM5, e.g. PT-20260930-0001
   dealerId      String
-  dealer        Dealer    @relation(fields: [dealerId], references: [id])
-  amount        Int       // Số tiền thu
-  paymentDate   DateTime  @default(now())
-  paymentMethod String    @default("CASH") // CASH, BANK_TRANSFER
+  dealer        Dealer   @relation(fields: [dealerId], references: [id])
+  amount        Int // Số tiền thu
+  paymentDate   DateTime @default(now())
+  paymentMethod String   @default("CASH") // CASH, BANK_TRANSFER
   notes         String?
   collectorId   String?
-  collector     User?     @relation("CollectedByUser", fields: [collectorId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  collector     User?    @relation("CollectedByUser", fields: [collectorId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   allocations PaymentInvoiceAllocation[]
 }
@@ -214,14 +358,14 @@ model DebtLedger {
   id              String   @id @default(cuid())
   dealerId        String
   dealer          Dealer   @relation(fields: [dealerId], references: [id])
-  transactionType String   // INVOICE, PAYMENT, RETURN, ADJUSTMENT
-  referenceType   String   // INVOICE, PAYMENT, RETURN, MANUAL
+  transactionType String // INVOICE, PAYMENT, RETURN, ADJUSTMENT
+  referenceType   String // INVOICE, PAYMENT, RETURN, MANUAL
   referenceId     String?
-  referenceCode   String?  // e.g. HD-001, PT-001
+  referenceCode   String? // e.g. HD-001, PT-001
   debitAmount     Int      @default(0) // Số tiền tăng nợ (mua hàng/hóa đơn)
   creditAmount    Int      @default(0) // Số tiền giảm nợ (thu tiền/trả hàng)
-  previousBalance Int      // Số nợ trước giao dịch
-  currentBalance  Int      // Số nợ sau giao dịch (previousBalance + debitAmount - creditAmount)
+  previousBalance Int // Số nợ trước giao dịch
+  currentBalance  Int // Số nợ sau giao dịch (previousBalance + debitAmount - creditAmount)
   notes           String?
   createdAt       DateTime @default(now())
 }
@@ -230,7 +374,7 @@ model BusinessRule {
   id          String                @id @default(cuid())
   code        String                @unique // QD1, QD2, QD3, QD5, QD7
   name        String
-  value       String                // JSON formatted configuration
+  value       String // JSON formatted configuration
   description String?
   isActive    Boolean               @default(true)
   createdAt   DateTime              @default(now())
@@ -255,12 +399,11 @@ model AuditLog {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   userRole  String?
-  action    String   // CREATE_PAYMENT, ISSUE_INVOICE, APPROVE_ORDER, UPDATE_RULE...
-  entity    String   // PAYMENT, INVOICE, DEALER, RULE...
+  action    String // CREATE_PAYMENT, ISSUE_INVOICE, APPROVE_ORDER, UPDATE_RULE...
+  entity    String // PAYMENT, INVOICE, DEALER, RULE...
   entityId  String?
-  details   String?  // JSON formatted details of change
+  details   String? // JSON formatted details of change
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
 }
-

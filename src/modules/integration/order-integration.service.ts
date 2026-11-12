@@ -4,6 +4,7 @@ import { CreditService, CreditCheckResult } from '../finance/credit/credit.servi
 import { NotFoundError, ValidationError } from '../../middleware/error.middleware.js';
 import { DebtTransactionType } from '../../config/constants.js';
 import { AuditService } from '../audit/audit.service.js';
+import { Prisma } from '@prisma/client';
 
 export class OrderIntegrationService {
   /**
@@ -55,16 +56,24 @@ export class OrderIntegrationService {
     }
 
     // Create invoice via InvoiceService to trigger QD3 validation & debt ledger entry
-    const result = await InvoiceService.createInvoice(
-      {
-        dealerId: order.dealerId,
-        salesOrderId: order.id,
-        totalAmount: order.totalAmount,
-        invoiceNumber: params.invoiceNumber,
-        notes: params.notes || `Xuất hóa đơn tự động từ đơn hàng ${order.orderNumber}`,
-      },
-      params.userId
-    );
+    let result;
+    try {
+      result = await InvoiceService.createInvoice(
+        {
+          dealerId: order.dealerId,
+          salesOrderId: order.id,
+          totalAmount: order.totalAmount,
+          invoiceNumber: params.invoiceNumber,
+          notes: params.notes || `Xuất hóa đơn tự động từ đơn hàng ${order.orderNumber}`,
+        },
+        params.userId
+      );
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
+      const invoice = await prisma.invoice.findUnique({ where: { salesOrderId: order.id } });
+      if (!invoice) throw error;
+      return { alreadyExists: true, invoice };
+    }
 
     return {
       alreadyExists: false,
@@ -135,4 +144,3 @@ export class OrderIntegrationService {
     return result;
   }
 }
-

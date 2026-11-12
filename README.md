@@ -6,6 +6,7 @@ Xem [quy ước branch và pull request](CONTRIBUTING.md) trước khi đóng g�
 - [Kế hoạch và phân công P1–P5](docs/project-plan.md)
 - [P2: Admin Web — giao diện vận hành nội bộ](docs/p2-admin-web.md)
 - [P3: API đại lý, migration và hướng dẫn chạy local](docs/p3-commercial-backend.md)
+- [P4: Đơn hàng, kho và giao nhận](docs/p4-order-fulfillment.md)
 - [P5: Finance và tích hợp](docs/p5-finance-integration.md)
 
 Backend dùng TypeScript, Express, Prisma và PostgreSQL 18. Xem hướng dẫn P3 trước khi migrate database đã có dữ liệu.

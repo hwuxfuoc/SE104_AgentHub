@@ -77,16 +77,16 @@ npm test
 | Tổng quan | `/` | — | P5 reports, P5 payments, P3 dealers |
 | Đại lý | `/dealers` | BM1, BM4 | P3 dealers, districts, tiers |
 | Chi tiết đại lý | `/dealers/:id` | BM1, BM4 | P3 + P5 debt |
-| Hàng hóa & tồn kho | `/products` | BM2, QĐ2 | **MOCK** — chờ P4 |
-| Phiếu nhập hàng | `/purchase-receipts` | BM2 | **MOCK** — chờ P4 |
-| Phiếu xuất hàng | `/sales-vouchers` | BM3, QĐ3 | **MOCK** — chờ P4 |
+| Hàng hóa & tồn kho | `/products` | BM2, QĐ2 | **MOCK** — API sản phẩm/kho đã có, chờ nối UI |
+| Phiếu nhập hàng | `/purchase-receipts` | BM2 | **MOCK** — API P4 đã có, chờ nối UI |
+| Phiếu xuất hàng | `/sales-vouchers` | BM3, QĐ3 | **MOCK** — API P4 đã có, chờ nối UI |
 | Thu tiền & công nợ | `/payments` | BM5, QĐ5 | P5 payments, debt |
 | Hóa đơn | `/invoices` | BM3 | P5 invoices |
 | Báo cáo tháng | `/reports` | BM6.1, BM6.2 | P5 reports |
 | Quy định | `/rules` | QĐ7 | P5 business-rules |
 | Nhật ký thao tác | `/audit-logs` | — | P5 audit-logs |
 
-Mục gắn **MOCK** hiển thị nhãn vàng trong sidebar và thông báo `MockNotice` trên trang. Khi P4 bàn giao API, chỉ cần xóa mock handler và cập nhật `api.ts` tương ứng trong feature.
+Mục gắn **MOCK** hiển thị nhãn vàng trong sidebar và thông báo `MockNotice` trên trang. P4 đã cung cấp API workflow; cần cập nhật client/luồng thao tác và xóa mock handler trước khi gỡ nhãn.
 
 ## Ma trận quyền giao diện
 
@@ -123,15 +123,15 @@ P2 phụ thuộc trực tiếp vào các API P5 cho phần tài chính:
 - **BM1 — Tiếp nhận đại lý**: Form dùng `GET /districts` và `GET /dealer-tiers` để điền dropdown. Lỗi `RULE_VIOLATION_QD1` hiển thị thông báo vượt hạn mức quận.
 - **BM4 — Tra cứu**: `GET /dealers` với `search`, `districtId`, `tierId`, `status`, `sortBy`, `sortOrder`, `page`, `limit`.
 
-### Với P4 (Order & Fulfillment — chờ bàn giao)
+### Với P4 (Order & Fulfillment)
 
-Ba màn hình dưới đây đang dùng mock, sẽ tích hợp API P4 khi sẵn sàng:
+API P4 đã được bàn giao; ba màn hình dưới đây vẫn chạy mock cho đến khi P2 nối client và luồng thao tác:
 
-- `GET/POST /purchase-receipts` — phiếu nhập hàng BM2
-- `GET/POST /sales-vouchers`, `POST /sales-vouchers/:id/approve` — phiếu xuất BM3
-- `GET /inventory` — tồn kho theo kho
+- `GET/POST /api/v1/purchase-receipts` — phiếu nhập hàng BM2; cần chọn kho và gửi `skuId`, `quantity`, `unitCost`.
+- `GET/POST /api/v1/sales-orders` (GET/POST alias `/api/v1/sales-vouchers`) — đơn BM3; gửi `warehouseId`, `dealerId`, `items: [{ skuId, quantity }]`. Duyệt qua `POST /api/v1/sales-orders/:id/approve`, xuất kho qua shipment `/dispatch`, xác nhận giao qua `/deliver`.
+- `GET /api/v1/products`, `GET /api/v1/warehouses`, `GET /api/v1/inventory` — SKU/giá, kho và tồn kho khả dụng.
 
-📌 **Ghi chú nhắc P4**: Khi phiếu xuất bị từ chối do vượt hạn mức nợ, trả mã `RULE_VIOLATION_QD3` để P2 hiển thị đúng thông báo nghiệp vụ.
+Backend trả `RULE_VIOLATION_QD3` khi vượt hạn mức nợ, `INSUFFICIENT_STOCK` khi thiếu tồn và các trạng thái đơn theo workflow; xem contract đầy đủ tại [p4-order-fulfillment.md](p4-order-fulfillment.md).
 
 ## Tài khoản mẫu (seed P5)
 
@@ -144,7 +144,7 @@ Ba màn hình dưới đây đang dùng mock, sẽ tích hợp API P4 khi sẵn 
 
 ## Phần tiếp theo
 
-- Tích hợp API P4 cho phiếu nhập, phiếu xuất và tồn kho khi P4 bàn giao.
+- Nối P2 client với API P4; thêm thao tác duyệt/hủy đơn, xuất/giao hàng và các màn hình xử lý trả hàng.
 - Viết test component cho form BM1, BM5 và các trạng thái lỗi nghiệp vụ.
 - Kiểm tra responsive trên màn hình tablet (768–1024px) cho DataTable và form drawer.
 - Đảm bảo CI chạy được `npm run lint` và `npm test` trước khi build frontend.
