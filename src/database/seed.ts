@@ -108,6 +108,10 @@ async function main() {
     { code: 'SP005', name: 'Bình đun siêu tốc', importPrice: 250000, unit: 'Thùng' },
   ];
 
+  for (const [code, name] of [['CAI', 'Cái'], ['HOP', 'Hộp'], ['THUNG', 'Thùng']]) {
+    await prisma.unitOfMeasure.upsert({ where: { name }, create: { code, name }, update: {} });
+  }
+
   for (const p of productData) {
     const product = await prisma.product.upsert({
       where: { code: p.code },

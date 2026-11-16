@@ -90,6 +90,7 @@ model Product {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
   skus       Sku[]
+  @@index([categoryId])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -100,10 +101,44 @@ model Sku {
   productId  String
   product    Product     @relation(fields: [productId], references: [id])
   unit       String
+  unitOfMeasure UnitOfMeasure @relation(fields: [unit], references: [name], onDelete: Restrict, onUpdate: Cascade)
   orderItems OrderItem[]
   pricings   Pricing[]
+  promotions Promotion[]
+  @@index([productId])
+  @@index([unit])
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+}
+
+model UnitOfMeasure {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @unique
+  skus      Sku[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CommercialCatalogGuard {
+  id Int @id
+}
+
+model Promotion {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  skuId            String
+  sku              Sku      @relation(fields: [skuId], references: [id])
+  minimumQuantity  Int
+  discountPercent  Int
+  effectiveFrom    DateTime
+  effectiveTo      DateTime
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([skuId, effectiveFrom])
 }
 
 model Pricing {
@@ -116,6 +151,8 @@ model Pricing {
   effectiveTo   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([skuId, effectiveFrom])
 }
 
 model SalesOrder {
