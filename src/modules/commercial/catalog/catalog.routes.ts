@@ -35,6 +35,11 @@ function route(handler: RequestHandler): RequestHandler {
       if (message.includes('Promotion_effective_window')) {
         return next(new AppError('Ngày kết thúc phải sau ngày bắt đầu', 422, 'INVALID_PROMOTION_WINDOW'));
       }
+      // PostgreSQL 18 reports RESTRICT violations as 23001; Prisma 5 exposes
+      // this as an unknown connector error rather than the usual P2003.
+      if (error instanceof Prisma.PrismaClientUnknownRequestError && /code: "23001"/.test(message)) {
+        return next(new AppError('Danh mục đang được sử dụng', 409, 'CATALOG_REFERENCE_CONFLICT'));
+      }
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') return next(new AppError('Mã hoặc tên đã tồn tại', 409, 'CATALOG_DUPLICATE'));
         if (error.code === 'P2003') return next(new AppError('Danh mục liên kết không hợp lệ hoặc đang được sử dụng', 409, 'CATALOG_REFERENCE_CONFLICT'));
