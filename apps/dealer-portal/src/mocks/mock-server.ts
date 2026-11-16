@@ -23,15 +23,16 @@ const USERS: MockUser[] = [
 
 const DEALER_DATA = [
   { id: 'd1', userId: 'u5', code: 'DL0001', name: 'Đại lý Minh Phát', phone: '0901234567', address: '12 Nguyễn Trãi, Q.5', email: 'dealer1@agenthub.vn', districtName: 'Quận 5',  tierName: 'Loại 1', maxDebt: 10_000_000 },
-  { id: 'd2', userId: 'u6', code: 'DL0002', name: 'Đại lý Hoa Bình',  phone: '0912345678', address: '45 Ba Tháng Hai, Q.10', email: 'dealer2@agenthub.vn', districtName: 'Quận 10', tierName: 'Loại 2', maxDebt: 5_000_000  },
+  { id: 'd2', userId: 'u6', code: 'DL0002', name: 'Đại lý Hòa Bình',  phone: '0912345678', address: '45 Ba Tháng Hai, Q.10', email: 'dealer2@agenthub.vn', districtName: 'Quận 10', tierName: 'Loại 2', maxDebt: 5_000_000  },
 ];
 
+// Đồng bộ với admin-web mock: 5 mặt hàng, 3 đơn vị tính (QĐ2), giá xuất = 102% giá nhập (QĐ3)
 const SKUS_SEED = [
-  { id: 'sku-1', code: 'SP-001', productName: 'Gạo tám thơm',      category: 'Thực phẩm', unit: 'Kg',    exportPrice: 32_000  },
-  { id: 'sku-2', code: 'SP-002', productName: 'Gạo tám thơm',      category: 'Thực phẩm', unit: 'Thùng', exportPrice: 320_000 },
-  { id: 'sku-3', code: 'SP-003', productName: 'Nước mắm Phú Quốc', category: 'Thực phẩm', unit: 'Chai',  exportPrice: 51_000  },
-  { id: 'sku-4', code: 'SP-004', productName: 'Dầu ăn Tường An',   category: 'Thực phẩm', unit: 'Lít',   exportPrice: 56_100  },
-  { id: 'sku-5', code: 'SP-005', productName: 'Nước ngọt Pepsi',   category: 'Đồ uống',   unit: 'Thùng', exportPrice: 285_000 },
+  { id: 'sku-1', code: 'MH01', productName: 'Gạo ST25',         category: 'Lương thực', unit: 'Bao',   exportPrice: 306_000 },
+  { id: 'sku-2', code: 'MH02', productName: 'Dầu ăn Simply 1L', category: 'Gia vị',     unit: 'Thùng', exportPrice: 459_000 },
+  { id: 'sku-3', code: 'MH03', productName: 'Nước mắm Nam Ngư', category: 'Gia vị',     unit: 'Thùng', exportPrice: 285_600 },
+  { id: 'sku-4', code: 'MH04', productName: 'Đường Biên Hòa',   category: 'Lương thực', unit: 'Bao',   exportPrice: 224_400 },
+  { id: 'sku-5', code: 'MH05', productName: 'Trà Lipton',       category: 'Đồ uống',    unit: 'Hộp',   exportPrice: 61_200  },
 ];
 
 const PROMOTIONS_SEED = [
@@ -55,26 +56,29 @@ const state = new Map<string, DealerState>();
 
 function initDealer(dealerId: string, seed: typeof DEALER_DATA[0]): DealerState {
   const orders: any[] = [
-    { id: `${dealerId}-o1`, orderNumber: 'DH-2026-0042', status: 'SHIPPED',          totalAmount: 2_100_000, createdAt: daysAgo(6),  approvedAt: daysAgo(5),  notes: null, items: [
-      { id: 'i1', skuId: 'sku-2', skuCode: 'SP-002', productName: 'Gạo tám thơm',     unit: 'Thùng', quantity: 5,  unitPrice: 320_000, amount: 1_600_000 },
-      { id: 'i2', skuId: 'sku-3', skuCode: 'SP-003', productName: 'Nước mắm Phú Quốc', unit: 'Chai',  quantity: 10, unitPrice: 51_000,  amount: 510_000  },
+    { id: `${dealerId}-o1`, orderNumber: 'DH-2026-0042', status: 'SHIPPED',          totalAmount: 2_754_000, createdAt: daysAgo(6),  approvedAt: daysAgo(5),  notes: null, items: [
+      { id: 'i1', skuId: 'sku-2', skuCode: 'MH02', productName: 'Dầu ăn Simply 1L', unit: 'Thùng', quantity: 4, unitPrice: 459_000, amount: 1_836_000 },
+      { id: 'i2', skuId: 'sku-3', skuCode: 'MH03', productName: 'Nước mắm Nam Ngư', unit: 'Thùng', quantity: 3, unitPrice: 285_600, amount: 856_800  },
     ]},
-    { id: `${dealerId}-o2`, orderNumber: 'DH-2026-0040', status: 'PENDING_APPROVAL', totalAmount: 650_000,   createdAt: daysAgo(4),  approvedAt: null,        notes: null, items: [
-      { id: 'i3', skuId: 'sku-1', skuCode: 'SP-001', productName: 'Gạo tám thơm', unit: 'Kg', quantity: 20, unitPrice: 32_000, amount: 640_000 },
+    { id: `${dealerId}-o2`, orderNumber: 'DH-2026-0040', status: 'PENDING_APPROVAL', totalAmount: 612_000,   createdAt: daysAgo(4),  approvedAt: null,        notes: null, items: [
+      { id: 'i3', skuId: 'sku-1', skuCode: 'MH01', productName: 'Gạo ST25', unit: 'Bao', quantity: 2, unitPrice: 306_000, amount: 612_000 },
     ]},
-    { id: `${dealerId}-o3`, orderNumber: 'DH-2026-0038', status: 'COMPLETED',        totalAmount: 850_000,   createdAt: daysAgo(11), approvedAt: daysAgo(10), notes: null, items: [] },
+    { id: `${dealerId}-o3`, orderNumber: 'DH-2026-0038', status: 'COMPLETED',        totalAmount: 918_000,   createdAt: daysAgo(11), approvedAt: daysAgo(10), notes: null, items: [
+      { id: 'i4', skuId: 'sku-1', skuCode: 'MH01', productName: 'Gạo ST25',         unit: 'Bao',   quantity: 2, unitPrice: 306_000, amount: 612_000 },
+      { id: 'i5', skuId: 'sku-5', skuCode: 'MH05', productName: 'Trà Lipton',       unit: 'Hộp',   quantity: 5, unitPrice: 61_200,  amount: 306_000 },
+    ]},
   ];
 
   const invoices: any[] = [
-    { id: `${dealerId}-inv1`, invoiceNumber: 'HD-2026-0042', totalAmount: 2_100_000, paidAmount: 0,         remainingAmount: 2_100_000, status: 'UNPAID',         issueDate: daysAgo(6),  dueDate: null, salesOrderId: `${dealerId}-o1`, orderNumber: 'DH-2026-0042' },
-    { id: `${dealerId}-inv2`, invoiceNumber: 'HD-2026-0038', totalAmount: 850_000,   paidAmount: 850_000,   remainingAmount: 0,         status: 'PAID',           issueDate: daysAgo(11), dueDate: null, salesOrderId: `${dealerId}-o3`, orderNumber: 'DH-2026-0038' },
+    { id: `${dealerId}-inv1`, invoiceNumber: 'HD-2026-0042', totalAmount: 2_754_000, paidAmount: 0,         remainingAmount: 2_754_000, status: 'UNPAID', issueDate: daysAgo(6),  dueDate: null, salesOrderId: `${dealerId}-o1`, orderNumber: 'DH-2026-0042' },
+    { id: `${dealerId}-inv2`, invoiceNumber: 'HD-2026-0038', totalAmount: 918_000,   paidAmount: 918_000,   remainingAmount: 0,         status: 'PAID',   issueDate: daysAgo(11), dueDate: null, salesOrderId: `${dealerId}-o3`, orderNumber: 'DH-2026-0038' },
   ];
 
-  const initDebt = 2_100_000;
+  const initDebt = 2_754_000;
   const ledger: any[] = [
-    { id: uid('l'), transactionType: 'INVOICE', referenceCode: 'HD-2026-0038', debitAmount: 850_000,   creditAmount: 0,       previousBalance: 1_250_000, currentBalance: 2_100_000, notes: null, createdAt: daysAgo(11) },
-    { id: uid('l'), transactionType: 'PAYMENT', referenceCode: 'PT-2026-0019', debitAmount: 0,         creditAmount: 1_000_000, previousBalance: 2_250_000, currentBalance: 1_250_000, notes: null, createdAt: daysAgo(14) },
-    { id: uid('l'), transactionType: 'INVOICE', referenceCode: 'HD-2026-0031', debitAmount: 1_250_000, creditAmount: 0,       previousBalance: 1_000_000, currentBalance: 2_250_000, notes: null, createdAt: daysAgo(18) },
+    { id: uid('l'), transactionType: 'INVOICE', referenceCode: 'HD-2026-0038', debitAmount: 918_000,   creditAmount: 0,         previousBalance: 1_836_000, currentBalance: 2_754_000, notes: null, createdAt: daysAgo(11) },
+    { id: uid('l'), transactionType: 'PAYMENT', referenceCode: 'PT-2026-0019', debitAmount: 0,         creditAmount: 1_000_000, previousBalance: 2_836_000, currentBalance: 1_836_000, notes: null, createdAt: daysAgo(14) },
+    { id: uid('l'), transactionType: 'INVOICE', referenceCode: 'HD-2026-0031', debitAmount: 1_836_000, creditAmount: 0,         previousBalance: 1_000_000, currentBalance: 2_836_000, notes: null, createdAt: daysAgo(18) },
   ];
 
   const returns: any[] = [
