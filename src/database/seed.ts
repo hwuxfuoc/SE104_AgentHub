@@ -138,6 +138,12 @@ async function main() {
     }
   }
 
+  await prisma.warehouse.upsert({
+    where: { code: 'KHO-CHINH' },
+    update: { name: 'Kho chính', isActive: true },
+    create: { code: 'KHO-CHINH', name: 'Kho chính' },
+  });
+
   // 5. Seed Users
   console.log('Seeding System Users (Roles: Admin, Accountant, Sales, Warehouse)...');
   const defaultPassword = await bcrypt.hash('password123', 10);
@@ -453,4 +459,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
