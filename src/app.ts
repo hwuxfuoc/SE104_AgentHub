@@ -17,6 +17,8 @@ import auditRoutes from './modules/audit/audit.routes.js';
 import { dealerRoutes, districtRoutes, dealerTierRoutes } from './modules/commercial/dealer/dealer.routes.js';
 import fulfillmentRoutes from './modules/fulfillment/fulfillment.routes.js';
 
+import { categoryRoutes, productRoutes, unitRoutes, skuRoutes, pricingRoutes, promotionRoutes } from './modules/commercial/catalog/catalog.routes.js';
+
 export const createApp = () => {
   const app = express();
 
@@ -51,6 +53,12 @@ export const createApp = () => {
   app.use('/api/v1/dealers', dealerRoutes);
   app.use('/api/v1/districts', districtRoutes);
   app.use('/api/v1/dealer-tiers', dealerTierRoutes);
+  app.use('/api/v1/categories', categoryRoutes);
+  app.use('/api/v1/products', productRoutes);
+  app.use('/api/v1/units', unitRoutes);
+  app.use('/api/v1/skus', skuRoutes);
+  app.use('/api/v1/pricing', pricingRoutes);
+  app.use('/api/v1/promotions', promotionRoutes);
   app.use('/api/v1/reports', reportRoutes);
   app.use('/api/v1/finance', creditRoutes);
   app.use('/api/v1/business-rules', businessRulesRoutes);

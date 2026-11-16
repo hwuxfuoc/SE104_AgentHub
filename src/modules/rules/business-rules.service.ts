@@ -1,7 +1,8 @@
+import { z } from 'zod';
 import prisma from '../../config/prisma.js';
 import { BusinessRuleCodes } from '../../config/constants.js';
 import { AuditService } from '../audit/audit.service.js';
-import { AppError, NotFoundError } from '../../middleware/error.middleware.js';
+import { AppError, BusinessRuleViolationError, NotFoundError } from '../../middleware/error.middleware.js';
 
 export interface QD1Config {
   maxDealerTypes: number;
@@ -58,18 +59,33 @@ export class BusinessRulesService {
     userId: string,
     changeReason?: string
   ) {
-    const rule = await prisma.businessRule.findUnique({
-      where: { code: ruleCode },
-    });
-
-    if (!rule) {
-      throw new NotFoundError(`Business rule ${ruleCode}`);
+    const qd2 = ruleCode === BusinessRuleCodes.QD2 ? z.object({
+      maxProductCount: z.number().int().positive(),
+      maxUnitCount: z.number().int().positive(),
+    }).parse(newValue) : undefined;
+    if (ruleCode === BusinessRuleCodes.QD3) {
+      z.object({
+        exportPriceRatio: z.number().finite().positive(),
+        tierDebtLimits: z.record(z.number().int().nonnegative()),
+      }).parse(newValue);
     }
 
-    const oldValue = rule.value;
     const newValueStr = JSON.stringify(newValue);
-
-    const updated = await prisma.$transaction(async (tx) => {
+    const { updated, oldValue } = await prisma.$transaction(async (tx) => {
+      if (qd2) {
+        await tx.$executeRaw`UPDATE "CommercialCatalogGuard" SET "id" = 1 WHERE "id" = 1`;
+        const productCount = await tx.product.count();
+        const unitCount = await tx.unitOfMeasure.count();
+        if (qd2.maxProductCount < productCount || qd2.maxUnitCount < unitCount) {
+          throw new BusinessRuleViolationError('QD2', 'Giới hạn mới thấp hơn số lượng đang có', {
+            productCount,
+            unitCount,
+          });
+        }
+      }
+      const rule = await tx.businessRule.findUnique({ where: { code: ruleCode } });
+      if (!rule) throw new NotFoundError(`Business rule ${ruleCode}`);
+      const oldValue = rule.value;
       const updatedRule = await tx.businessRule.update({
         where: { code: ruleCode },
         data: {
@@ -87,7 +103,7 @@ export class BusinessRulesService {
         },
       });
 
-      return updatedRule;
+      return { updated: updatedRule, oldValue };
     });
 
     // Invalidate cache
@@ -98,7 +114,7 @@ export class BusinessRulesService {
       userId,
       action: 'UPDATE_BUSINESS_RULE',
       entity: 'BUSINESS_RULE',
-      entityId: rule.id,
+      entityId: updated.id,
       details: {
         ruleCode,
         oldValue: JSON.parse(oldValue),

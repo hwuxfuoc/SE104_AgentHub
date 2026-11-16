@@ -1,4 +1,4 @@
-# P3: Commercial Backend — mốc 1 (BM1, BM4, QĐ1)
+# P3: Commercial Backend
 
 Branch P3 được xây dựng từ `feature/bm5-payment-bm6-reports` của P5, dùng chung Express 4, Prisma 5, JWT, BusinessRule và AuditLog. Backend dùng TypeScript strict và PostgreSQL 18 theo stack nhóm đã chốt. Tất cả module dùng cùng schema Prisma.
 
@@ -104,6 +104,21 @@ npm test
 
 Test P3 kiểm tra QĐ1, duplicate code, chuyển quận, thay đổi giới hạn, danh mục ngưng hoạt động, phân quyền và scope Dealer, ràng buộc cạnh tranh, cùng khả năng truy cập route P5. Test P5 được chạy chung trong schema PostgreSQL tạm đã seed. CI dùng service PostgreSQL 18.
 
-Mốc tiếp theo: CRUD Category/Product/UnitOfMeasure/SKU và QĐ2; Pricing và tính giá xuất QĐ3; sau đó Promotion. Quản trị quận/loại, UI, kho, đơn hàng và tài chính chưa nằm trong mốc này.
+## Danh mục, bảng giá và khuyến mãi
+
+Xem [OpenAPI thương mại](openapi-commercial.json) để tích hợp P1/P2. Dùng cùng base path và JWT như API đại lý.
+
+| Route | Dữ liệu ghi | Bộ lọc danh sách |
+|---|---|---|
+| /categories | code, name | search |
+| /products | code, name, categoryId | search, categoryId |
+| /units | code, name | search |
+| /skus | code, productId, unit (tên đơn vị) | search, productId, unit |
+| /promotions | code, name, skuId, minimumQuantity, discountPercent, effectiveFrom, effectiveTo, isActive | search, skuId |
+| /pricing | skuId, importPrice khi tạo; importPrice khi cập nhật | skuId, activeOnly |
+
+Danh mục và khuyến mãi hỗ trợ GET, POST trên collection và GET, PATCH, DELETE theo ID. Các thao tác ghi dành cho Admin/Sales. Đại lý chỉ thấy khuyến mãi đang hiệu lực và giá xuất hiện hành. QĐ2 mặc định tối đa 5 mặt hàng và 3 đơn vị tính; trigger kiểm tra theo cấu hình hiện hành, kể cả khi tạo ngoài API. Migration lấy tên đơn vị từ các SKU đã có và giữ nguyên chuỗi đơn vị trên các dòng đơn hàng lịch sử.
+
+Giá ghi theo đồng nguyên dương. Mỗi POST/PATCH giá đóng phiên bản cũ và tạo phiên bản mới theo QĐ3 hiện hành, làm tròn đến đồng. PATCH yêu cầu ID của bản giá mới nhất, trả 409 nếu phiên bản đã đổi. Nhân viên có thể truyền activeOnly=false để xem lịch sử. Ngày giờ gửi theo ISO 8601 có múi giờ. Khuyến mãi cấu hình theo SKU, số lượng tối thiểu và phần trăm giảm trong khoảng thời gian hiệu lực. P4 có thể gọi getEffectivePrice trong pricing.service.ts với transaction của đơn hàng để đọc phiên bản giá hiệu lực. Áp dụng khuyến mãi vào tổng tiền đơn hàng thuộc luồng tích hợp P4.
 
 Tham khảo [PostgreSQL row locks](https://www.postgresql.org/docs/18/explicit-locking.html), [trigger functions](https://www.postgresql.org/docs/18/plpgsql-trigger.html) và [Prisma baseline](https://www.prisma.io/docs/orm/prisma-migrate/workflows/baselining).
