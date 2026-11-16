@@ -54,6 +54,7 @@ const users: MockUser[] = [
   { id: 'u3', email: 'warehouse@agenthub.vn', fullName: 'Lê Thủ Kho', role: 'WAREHOUSE', password: 'password123', dealerId: null },
   { id: 'u4', email: 'accountant@agenthub.vn', fullName: 'Phạm Kế Toán', role: 'ACCOUNTANT', password: 'password123', dealerId: null },
   { id: 'u5', email: 'dealer1@agenthub.vn', fullName: 'Đại lý Minh Phát', role: 'DEALER', password: 'password123', dealerId: 'd1' },
+  { id: 'u6', email: 'dealer2@agenthub.vn', fullName: 'Đại lý Hòa Bình',  role: 'DEALER', password: 'password123', dealerId: 'd2' },
 ];
 
 const DISTRICT_NAMES = [
