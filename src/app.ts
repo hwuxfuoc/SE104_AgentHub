@@ -15,6 +15,7 @@ import creditRoutes from './modules/finance/credit/credit.routes.js';
 import businessRulesRoutes from './modules/rules/business-rules.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
 import { dealerRoutes, districtRoutes, dealerTierRoutes } from './modules/commercial/dealer/dealer.routes.js';
+import fulfillmentRoutes from './modules/fulfillment/fulfillment.routes.js';
 
 export const createApp = () => {
   const app = express();
@@ -54,6 +55,7 @@ export const createApp = () => {
   app.use('/api/v1/finance', creditRoutes);
   app.use('/api/v1/business-rules', businessRulesRoutes);
   app.use('/api/v1/audit-logs', auditRoutes);
+  app.use('/api/v1', fulfillmentRoutes);
 
   // 404 Handler
   app.use((_req, res) => {
@@ -71,4 +73,3 @@ export const createApp = () => {
 };
 
 export default createApp;
-

@@ -28,6 +28,12 @@ export const OrderStatus = {
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
+export const ReservationStatus = {
+  ACTIVE: 'ACTIVE',
+  RELEASED: 'RELEASED',
+  FULFILLED: 'FULFILLED',
+} as const;
+
 export const InvoiceStatus = {
   UNPAID: 'UNPAID',
   PARTIALLY_PAID: 'PARTIALLY_PAID',
@@ -62,4 +68,3 @@ export const BusinessRuleCodes = {
 } as const;
 
 export type BusinessRuleCode = typeof BusinessRuleCodes[keyof typeof BusinessRuleCodes];
-
